@@ -1,0 +1,116 @@
+blueprint:
+  name: Flash lights
+  description: Create a script that flashes lights and restore them at their previous state.
+  domain: script
+  input:
+    target_lights:
+      name: Lights
+      description: Lights to flash
+      selector:
+        target:
+          entity:
+            domain: light
+    number_of_times:
+      name: Number of times to flash
+      description: How many times to flash the lights
+      selector:
+        number:
+          min: 0
+          max: 100
+          mode: box
+          unit_of_measurement: times    
+    color_rgb:
+      name: RGB Color
+      description: Choose the color for blinking lights
+      selector:
+        select:
+          options:
+            - white   
+            - red
+            - green
+            - lime
+            - blue
+            - navy
+            - yellow
+            - orange
+            - turquoise
+            - violet
+            - magenta
+            - aliceblue
+            - antiquewhite
+            - aquamarine
+            - aqua
+            - cadetblue
+            - coral
+            - cornflowerblue
+            - crimson
+            - darkblue
+            - darkorange
+            - darkorchid
+            - darksalmon
+            - darkslategray
+            - deeppink
+            - darkviolet
+            - deepskyblue
+            - ghostwhite
+            - gold
+            - lawngreen
+            - lightcoral
+            - lightgreen
+            - lightseagreen
+    brightness_pct:
+      name: Brightness
+      description: Color Brightness percentage
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: '%'
+          step: 1.0
+          mode: slider
+    delay:
+      name: (OPTIONAL) Delay
+      description: Delay flashing lights 1s=1000ms
+      default: 1000
+      selector:
+        number:
+          min: 0.0
+          max: 20000.0
+          unit_of_measurement: ms
+          step: 1.0
+          mode: slider
+mode: restart
+max_exceeded: silent
+sequence:
+- service: scene.create
+  data:
+    scene_id: all_lights_snapshot
+    snapshot_entities: "{% set lights = states.light\n  | map(attribute='entity_id')\
+      \ | join(',') %}\n  {{lights}}\n"
+- service: light.turn_on
+  target: !input 'target_lights'
+  data:
+    color_name: !input 'color_rgb'
+    brightness_step_pct: !input 'brightness_pct'
+- repeat:
+    count: !input 'number_of_times'
+    sequence:
+    - service: light.toggle
+      data: {}
+      target: !input 'target_lights'
+    - delay:
+            hours: 0
+            minutes: 0
+            seconds: 1
+            milliseconds: 500
+    - service: light.toggle
+      data: {}
+      target: !input 'target_lights'
+    - delay:
+            hours: 0
+            minutes: 0
+            seconds: 1
+            milliseconds: 500
+- service: scene.turn_on
+  data:
+    entity_id: scene.all_lights_snapshot
